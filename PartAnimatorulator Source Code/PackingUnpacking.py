@@ -1,6 +1,9 @@
 import os
 import re
 from tkinter import messagebox
+import json
+import EulerHexTools
+import FrameTools
 
 def Unpack(File, UnpackPath):
     # Resolve relative path to absolute
@@ -90,21 +93,29 @@ def Unpack(File, UnpackPath):
         part_filename = os.path.join(PivotDataPath, f"PivotPart_{i + 1:02d}.bin")
         with open(part_filename, 'wb') as f:
             f.write(after_delimiter[start_index:end_index])
+    FrameTools.ExtractFrames(AnimSlotsPath, os.path.join(UnpackPath, "Frames.json"))
+
     return True
+
 
 
 def Pack(OutputFile, UnpackPath):
     # Resolve relative path to absolute
     UnpackPath = os.path.abspath(UnpackPath)
-
+    
     AnimSlotsPath = os.path.join(UnpackPath, "AnimSlots")
     PivotDataPath = os.path.join(UnpackPath, "PivotData")
-
+    frames_json_path = os.path.join(UnpackPath, "Frames.json")
+    
     try:
-        # Read AnimSlots.bin
-        with open(os.path.join(UnpackPath, "AnimSlots.bin"), 'rb') as f:
-            animslots_bin = f.read()
-
+        # Read frames data
+        with open(frames_json_path, 'r') as f:
+            frames_data = json.load(f)
+    except FileNotFoundError:
+        messagebox.showerror("Error", "Frames.json not found")
+        return False
+    
+    try:
         # Read CarHashString.bin
         with open(os.path.join(UnpackPath, "CarHashString.bin"), 'rb') as f:
             carhash_string = f.read()
@@ -117,15 +128,28 @@ def Pack(OutputFile, UnpackPath):
         messagebox.showerror("Error", "Missing main files in the unpacking folder.")
         return False
 
-    # Collect all AnimSlots files
+    # Process AnimSlots with frame data
     animslots_parts = []
     animslot_files = sorted(
         [f for f in os.listdir(AnimSlotsPath) if f.startswith("AnimSlot")],
         key=lambda x: int(x.split("_")[1].split(".")[0])  # Sort by part number
     )
+    
     for animslot_file in animslot_files:
         with open(os.path.join(AnimSlotsPath, animslot_file), 'rb') as f:
-            animslots_parts.append(f.read())
+            animslot_data = f.read()
+            
+        # Get corresponding frames for this AnimSlot file
+        file_path = "TEMP/AnimSlots/" + animslot_file
+        if file_path in frames_data and frames_data[file_path]:
+            # Get the first (and only) element of the frames list
+            file_frames = frames_data[file_path][0]
+            # Inject frames into AnimSlot data
+            modified_data = FrameTools.InjectFramesIntoAnimSlot(file_frames, animslot_data)
+            animslots_parts.append(modified_data)
+        else:
+            # If no frames data found, use original data
+            animslots_parts.append(animslot_data)
 
     # Combine AnimSlots parts
     combined_animslots = b"".join(animslots_parts)
@@ -151,5 +175,3 @@ def Pack(OutputFile, UnpackPath):
             return True
     except:
         return False
-    
-

@@ -10,17 +10,17 @@ import tkinter
 import os
 from tkinter import filedialog
 from DialogBox import InputDialog
-from CTkMenuBar import *
 import shutil
 import PivotNames
 import shutil
 from tkinter import messagebox
+import json
+import EulerHexTools
+import FrameTools
 
 customtkinter.set_appearance_mode("dark")
 
 PartAnimPath = ''
-
-
 
 def UpdateStates(event=None):
     # Get selected item
@@ -40,7 +40,7 @@ def UpdateStates(event=None):
             # Disable buttons
             rename_button.configure(state="disabled")
             #delete_button.configure(state="disabled")
-        
+         
         if parent == 'CarXName':
             # Enable buttons
             rename_button.configure(state="normal")
@@ -54,6 +54,20 @@ def UpdateStates(event=None):
             YEntry.insert(0, pivot.GetValues()[1])
             ZEntry.insert(0, pivot.GetValues()[2])
             WEntry.insert(0, pivot.GetValues()[3])
+        elif Hierarchy.parent(parent) == 'AnimSlots':
+            for item in EntryList:
+                item.configure(state="normal")
+                item.delete(0, customtkinter.END)
+            WEntry.configure(state="disabled")
+            with open('TEMP\Frames.json', 'r') as FramesJson:
+                FramesInfo = json.load(FramesJson)
+            frame = FramesInfo[parent][0][f"FRAME{(int(selected_items[0][21:])):02d}"]
+            x = frame["x"]
+            y = frame["y"]
+            z = frame["z"]
+            XEntry.insert(0, x)
+            YEntry.insert(0, y)
+            ZEntry.insert(0, z)
         else:
             for item in EntryList:
                 item.delete(0, customtkinter.END)
@@ -64,11 +78,46 @@ def UpdateStates(event=None):
         rename_button.configure(state="disabled")
         #delete_button.configure(state="disabled")
 
-def UpdatePivot(a):
+def UpdateCoords(a):
     selected_items = Hierarchy.selection()
     selected_item = selected_items[0]
-    pivot = Pivot(selected_item)
-    pivot.UpdateValues(float(XEntry.get()), float(YEntry.get()), float(ZEntry.get()), float(WEntry.get()))
+    parent = Hierarchy.parent(selected_item)
+    if parent == 'PivotData':
+        pivot = Pivot(selected_item)
+        pivot.UpdateValues(float(XEntry.get()), float(YEntry.get()), float(ZEntry.get()), float(WEntry.get()))
+    elif Hierarchy.parent(parent) == 'AnimSlots':
+        with open('TEMP\Frames.json', 'r') as FramesJson:
+            FramesInfo = json.load(FramesJson)
+        frame = FramesInfo[parent][0][f"FRAME{(int(selected_items[0][21:])):02d}"]
+        frame.update({
+            "x": float(XEntry.get()),
+            "y": float(YEntry.get()),
+            "z": float(ZEntry.get())
+        })
+        with open('TEMP\Frames.json', 'w') as FramesJson:
+            json.dump(FramesInfo, FramesJson, indent=4)
+
+def InterpolateSlot():
+    selected_items = Hierarchy.selection()
+    if selected_items:
+        if Hierarchy.parent(selected_items[0]) == 'AnimSlots':
+            with open("TEMP\Frames.json", "r") as file:
+                FrameList = json.load(file)
+            Interpolated = FrameTools.Interpolate(FrameList, selected_items[0])
+            try:
+                with open("TEMP\Frames.json", "w") as file:
+                    json.dump(Interpolated, file, indent=4)
+            except Exception as e:
+                messagebox.showerror("Error", e)
+                return
+            messagebox.showinfo("Success", f"Interpolated {Hierarchy.item(selected_items[0], 'text')}")
+
+        else:
+            messagebox.showerror("Error", "To interpolate you should select Anim Slot first!")
+    else:
+        messagebox.showerror("Error", "To interpolate you should select Anim Slot first!")
+
+
 
 def FindAndReplace():
     Find = InputDialog.show(
@@ -85,29 +134,6 @@ def FindAndReplace():
 
     else:
         pass
-'''
-def AddBodykitData():
-    Check = [f"AnimSlot_{i}.bin" for i in range(14, 22)]
-    ExistingSlots = [filename for filename in Check if os.path.exists(os.path.join('TEMP/AnimSlots/', filename))]
-    if ExistingSlots:
-        messagebox.showerror("Error", "Bodykit data already exists in this file.")
-    else:
-        input = InputDialog.show(
-        app, title="Editor", prompt="Please enter XNAME for new slots.", default_text='')
-        if input:
-                for filename in os.listdir('prefab/'):
-
-                    # Create the full path to the file
-                    source_file = os.path.join('prefab/', filename)
-                    destination_file = os.path.join('TEMP/AnimSlots/', filename)
-                    if os.path.isfile(source_file):
-                        shutil.copy(source_file, destination_file)
-                        BodySlot = AnimSlot(destination_file, '')
-                        name = BodySlot.GetName()
-                        NewName = name.replace('XNAME', input)
-                        if BodySlot.Rename(NewName):
-                            Hierarchy.insert('AnimSlots', 'end', iid=destination_file, text=BodySlot.GetName())
-'''
 
 
 def rename_item():
@@ -128,38 +154,7 @@ def rename_item():
             if input:
                 if CarNameHash.Rename(input):
                     Hierarchy.item(selected_id, text=input)
-                    
-                    
 
-#def copy_item():
-#    selected_item = Hierarchy.selection()
-#    selected_id = selected_item[0]
-#    if selected_item:
-#        if Hierarchy.parent(selected_item) == 'AnimSlots':
-#            SelectedSlot = AnimSlot(selected_id, '')
-#            input = InputDialog.show(
-#                app, title="Editor", prompt="Enter name of the new AnimSlot", default_text=SelectedSlot.GetName())
-#            if input:
-#                NewPath = SelectedSlot.Copy('TEMP/AnimSlots/')
-#                if NewPath:
-#                    NewSlot = AnimSlot(NewPath, '')
-#                    print(NewSlot.GetName())
-#                   NewSlot.Rename(input)
-#                    print(NewSlot.GetName())
-#                    id = 'TEMP/AnimSlots/' + os.path.basename(NewPath)
-#                    Hierarchy.insert('AnimSlots', 'end', iid=id, text=input)
-#        pass
-'''
-def delete_item():
-    selected_item = Hierarchy.selection()
-    selected_id = selected_item[0]
-    if selected_item:
-        if Hierarchy.parent(selected_item) == 'AnimSlots':
-            os.remove(selected_id)
-            Hierarchy.delete(selected_item)
-
-        pass
-'''
 
 def PopulateHierarchy(FilePath):
         global Pivots
@@ -170,14 +165,22 @@ def PopulateHierarchy(FilePath):
         Hierarchy.insert('', '0', 'i1', text=os.path.basename(FilePath))
         Hierarchy.insert('i1', 'end', iid='CarXName', text='CarXName')
         Hierarchy.insert('i1', 'end', iid='AnimSlots', text='AnimSlots')
-        Hierarchy.insert('i1', 'end', iid='PivotData', text='PivotData')
+        Hierarchy.insert('i1', 'end', iid='PivotData', text='PivotPositions')
+        with open('TEMP/Frames.json', 'r') as json_file:
+            frames_data = json.load(json_file)
 
+        
+        # Loop through and print each frame
         animlist = os.listdir('TEMP/AnimSlots/')
         pivotlist = os.listdir('TEMP/PivotData/')
         for item in animlist:
             fullpath = 'TEMP/AnimSlots/' + item
             Slot = AnimSlot(fullpath, '')
             Hierarchy.insert('AnimSlots', 'end', iid=fullpath, text=Slot.GetName())
+            frames = frames_data[fullpath][0].items()
+            print(f"Frames in {fullpath}:")
+            for i, frame in enumerate(frames, 1):
+                Hierarchy.insert(fullpath, 'end', iid=item+f'\FRAME{i}', text=f'FRAME{i:02d}')
         for item, pivot_name in zip(pivotlist, PivotNames.PivotNamesList):
             fullpath = 'TEMP/PivotData/' + item
             Hierarchy.insert('PivotData', 'end', iid=fullpath, text=pivot_name)
@@ -230,7 +233,7 @@ def Exit():
 
 
 app = CTk()  
-app.title("PartAnimatorulator 0.0.2b | December 2024") 
+app.title("PartAnimatorulator 0.0.4b | December 31, 2024") 
 current_directory = os.path.dirname(os.path.abspath(__file__))
 app.iconbitmap(os.path.join(current_directory, "icon.ico"))
 app.protocol("WM_DELETE_WINDOW", Exit)
@@ -312,7 +315,7 @@ ToolsMenu = tkinter.Menu(ToolsButton, tearoff = 0, bg = bg_color,
 activebackground= selected_color, fg = "white",borderwidth = 1, activeborderwidth= 1)
 
 ToolsMenu.add_command(label = "Find and Replace (AnimSlot Only)", command=FindAndReplace)
-#ToolsMenu.add_command(label = "Add Bodykits Slots", command=AddBodykitData)
+ToolsMenu.add_command(label = 'Interpolate AnimSlot', command=InterpolateSlot)
 
 ToolsButton.configure(menu = ToolsMenu)
 
@@ -351,7 +354,7 @@ scrollbar = ttk.Scrollbar(HierarchyFrame, orient='vertical', style="Vertical.TSc
 scrollbar.pack(side=RIGHT, fill=Y)
 
 # Create Treeview
-Hierarchy = ttk.Treeview(HierarchyFrame, yscrollcommand=scrollbar.set, show="tree")
+Hierarchy = ttk.Treeview(HierarchyFrame, yscrollcommand=scrollbar.set, show="tree", selectmode="browse")
 Hierarchy.pack(fill="both", expand=True)
 
 # Bind selection event
@@ -417,7 +420,7 @@ separator7.grid(row=7, column=0, sticky="ew", pady=1)
 EntryList = [XEntry,YEntry,ZEntry,WEntry]
 
 for item in EntryList:
-    item.bind("<KeyRelease>", UpdatePivot)
+    item.bind("<KeyRelease>", UpdateCoords)
 
 LogFrame = CTkFrame(master=app)
 LogFrame.grid(row=2, column=0, sticky = "ew")
