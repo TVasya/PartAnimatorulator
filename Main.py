@@ -233,7 +233,7 @@ def Exit():
 
 
 app = CTk()  
-app.title("PartAnimatorulator 0.0.4b | December 31, 2024") 
+app.title("PartAnimatorulator 0.0.4b | January 08, 2025") 
 current_directory = os.path.dirname(os.path.abspath(__file__))
 app.iconbitmap(os.path.join(current_directory, "icon.ico"))
 app.protocol("WM_DELETE_WINDOW", Exit)
