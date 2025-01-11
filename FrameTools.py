@@ -4,6 +4,7 @@ import re
 import os
 import numpy as np
 from scipy.interpolate import interp1d
+from tkinter import messagebox
 
 #this part was fully written by ai because im lazy and i want to finish it before 2025
 
@@ -145,3 +146,111 @@ def Interpolate(data, animslot_key):
                 animation[frame][axis] = interpolated_values[i]
 
     return data
+
+#chatgpt intensives 
+def ExportFrames(json_file, object_key, output_txt_file):
+      
+    try:
+        # Load the JSON data
+        with open(json_file, 'r') as file:
+            data = json.load(file)
+        
+        # Check if the specified object exists in the JSON
+        if object_key not in data:
+            print(f"Error: The key '{object_key}' was not found in the JSON file.")
+            return False
+        
+        # Get the frame data for the specified object
+        frames = data[object_key]
+        
+        if not isinstance(frames, list) or not frames:
+            print(f"Error: The object '{object_key}' does not contain valid frame data.")
+            return False
+        
+        # Extract and write frame data to the output text file
+        with open(output_txt_file, 'w') as output_file:
+            for frame_set in frames:
+                for frame, coords in frame_set.items():
+                    x, y, z = coords["x"], coords["y"], coords["z"]
+                    output_file.write(f"{x} {y} {z}\n")
+        
+        print(f"Frame data successfully written to '{output_txt_file}'.")
+        return True
+    
+    except FileNotFoundError:
+        print(f"Error: The file '{json_file}' was not found.")
+    except json.JSONDecodeError:
+        print(f"Error: The file '{json_file}' is not a valid JSON file.")
+    except Exception as e:
+        print(f"An unexpected error occurred: {e}")
+
+def ImportFrames(json_file_path, animslot_key, txt_file_path):
+    try:
+        # Load the JSON file
+        with open(json_file_path, 'r') as json_file:
+            data = json.load(json_file)
+
+        # Ensure the animslot exists
+        if animslot_key not in data:
+            print(f"Error: Animslot '{animslot_key}' not found in JSON.")
+            return False
+
+        animslot_frames = data[animslot_key][0]  # Assuming frames are in the first list element
+        frame_keys = list(animslot_frames.keys())  # Get the frame keys in the JSON
+        num_json_frames = len(frame_keys)
+
+        # Read the .txt file
+        with open(txt_file_path, 'r') as txt_file:
+            txt_lines = txt_file.readlines()
+
+        if not txt_lines:
+            print("Error: The TXT file is empty.")
+            return False
+
+        num_txt_frames = len(txt_lines)
+
+        # Check if the TXT file has more frames than the JSON animslot
+        if num_txt_frames != num_json_frames:
+            messagebox.showerror("Error", f"Error: Couldn't import frames. Expected {num_json_frames} frames, recieved {num_txt_frames} frames.")
+            return False
+
+        # Import the data
+        for i, line in enumerate(txt_lines):
+            values = line.strip().split()
+            if len(values) != 3:
+                print(f"Warning: Skipping invalid line {i + 1}: {line}")
+                continue
+
+            try:
+                x_deg, y_deg, z_deg = map(float, values)
+
+                # Update the JSON data (convert degrees back to float)
+                frame_key = frame_keys[i]  # Get the corresponding frame key in JSON
+                animslot_frames[frame_key] = {
+                    "x": x_deg,
+                    "y": y_deg,
+                    "z": z_deg
+                }
+
+            except ValueError:
+                print(f"Warning: Skipping invalid line {i + 1}: {line}")
+                continue
+
+        # Save the updated JSON file
+        with open(json_file_path, 'w') as json_file:
+            json.dump(data, json_file, indent=4)
+
+        print(f"Animation successfully imported into animslot '{animslot_key}' in JSON.")
+        return True
+
+    except FileNotFoundError as e:
+        print(f"Error: File not found - {e}")
+        return False
+
+    except json.JSONDecodeError:
+        print("Error: Failed to decode JSON file. Please ensure it is properly formatted.")
+        return False
+
+    except Exception as e:
+        messagebox.showerror("Error", f"An unexpected error occurred: {e}")
+        return False

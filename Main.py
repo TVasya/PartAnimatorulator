@@ -35,10 +35,14 @@ def UpdateStates(event=None):
         if parent == 'AnimSlots':
             # Enable buttons
             rename_button.configure(state="normal")
+            export_button.configure(state="normal")
+            import_button.configure(state="normal")
             #delete_button.configure(state="normal")
         else:
             # Disable buttons
             rename_button.configure(state="disabled")
+            export_button.configure(state="disabled")
+            import_button.configure(state="disabled")
             #delete_button.configure(state="disabled")
          
         if parent == 'CarXName':
@@ -155,6 +159,32 @@ def rename_item():
                 if CarNameHash.Rename(input):
                     Hierarchy.item(selected_id, text=input)
 
+def Export():
+    selected_item = Hierarchy.selection()
+    if selected_item:
+        selected_id = selected_item[0]
+        selected_name = Hierarchy.item(selected_id)['text']
+        files = [('Text Document', '*.txt'), 
+                ('All Files', '*.*')] 
+        ExportPath = filedialog.asksaveasfile(filetypes = files, defaultextension = files, initialfile=selected_name)
+        if ExportPath:
+            if FrameTools.ExportFrames('TEMP/Frames.json', selected_id, ExportPath.name):
+                messagebox.showinfo("Success", f"Exported {selected_name}'s frames to {ExportPath.name}")
+                Log.configure(text=f"Exported {selected_name}'s frames to {ExportPath.name}")
+
+            
+
+def Import():
+    selected_item = Hierarchy.selection()
+    if selected_item:
+        selected_id = selected_item[0]
+        selected_name = Hierarchy.item(selected_id)['text']
+        ImportPath = filedialog.askopenfilename()
+        if ImportPath:
+            if FrameTools.ImportFrames('TEMP/Frames.json', selected_id, ImportPath):
+                messagebox.showinfo("Success", f"Imported frames from {ImportPath}")
+                Log.configure(text=f"Imported frames from {ImportPath}")
+
 
 def PopulateHierarchy(FilePath):
         global Pivots
@@ -233,7 +263,7 @@ def Exit():
 
 
 app = CTk()  
-app.title("PartAnimatorulator 0.0.5b | January 08, 2025") 
+app.title("PartAnimatorulator 1.0.0 | January 10, 2025") 
 current_directory = os.path.dirname(os.path.abspath(__file__))
 app.iconbitmap(os.path.join(current_directory, "icon.ico"))
 app.protocol("WM_DELETE_WINDOW", Exit)
@@ -339,10 +369,20 @@ LeftMainFrame.rowconfigure(1, weight=1)
 TopFrame = CTkFrame(master=LeftMainFrame)
 TopFrame.grid(row=0, column=0, sticky='ew', padx=5, pady=5)
 TopFrame.columnconfigure((0), weight=1)
+TopFrame.columnconfigure((1), weight=1)
+TopFrame.columnconfigure((2), weight=1)
 
 rename_button = CTkButton(master=TopFrame, text="Rename", command=rename_item, state="disabled", width=50,
                          fg_color="#1F1F1F", hover_color="#262626")
-rename_button.grid(row=0, column=0, padx=2, sticky='ew')
+rename_button.grid(row=0, column=0, padx=3, pady=2, sticky='ew')
+
+export_button = CTkButton(master=TopFrame, text="Export", command=Export, state="disabled", width=50,
+                         fg_color="#1F1F1F", hover_color="#262626")
+export_button.grid(row=0, column=1, padx=1, pady=2, sticky='ew')
+
+import_button = CTkButton(master=TopFrame, text="Import", command=Import, state="disabled", width=50,
+                         fg_color="#1F1F1F", hover_color="#262626")
+import_button.grid(row=0, column=2, padx=3, pady=2, sticky='ew')
 
 
 # Create Hierarchy Frame
