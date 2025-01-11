@@ -19,7 +19,7 @@ from pathlib import Path
 # Import Rotation Animation
 class ImportRotationAnimation(bpy.types.Operator, ImportHelper):
     bl_idname = "import_animation.nfsu2"
-    bl_label = "Import NFSU2 Animation"
+    bl_label = "Import Animation"
     bl_options = {'PRESET', 'UNDO'}
 
     filename_ext = ".txt"
@@ -87,7 +87,7 @@ class ImportRotationAnimation(bpy.types.Operator, ImportHelper):
 # Export Rotation Animation
 class ExportRotationAnimation(bpy.types.Operator, ExportHelper):
     bl_idname = "export_animation.nfsu2"
-    bl_label = "Export NFSU2 Animation"
+    bl_label = "Export Animation"
     bl_options = {'PRESET', 'UNDO'}
 
     filename_ext = ".txt"
