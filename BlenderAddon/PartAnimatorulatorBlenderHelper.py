@@ -60,7 +60,7 @@ class ImportRotationAnimation(bpy.types.Operator, ImportHelper):
                     x_deg, y_deg, z_deg = map(float, values)
                     x_rad, y_rad, z_rad = math.radians(x_deg), math.radians(y_deg), math.radians(z_deg)
 
-                    frame = i + 1  # Frame numbers start at 1
+                    frame = i  # Frame numbers start at 1
                     obj.rotation_euler = (x_rad, y_rad, z_rad)
                     obj.keyframe_insert(data_path="rotation_euler", frame=frame)
 
@@ -70,7 +70,7 @@ class ImportRotationAnimation(bpy.types.Operator, ImportHelper):
                     self.report({'WARNING'}, f"Skipping invalid line {i + 1}: {line}")
                     continue
 
-            context.scene.frame_start = 1
+            context.scene.frame_start = 0
             context.scene.frame_end = frame_count
             context.scene.render.fps = 30
 
