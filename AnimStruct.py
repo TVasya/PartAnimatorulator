@@ -5,6 +5,7 @@ import struct
 from tkinter import messagebox
 import shutil
 import os
+import EulerHexTools
 class AnimSlot:
     
     def __init__(self, path, name):
@@ -169,21 +170,26 @@ class Pivot:
         self.y = None
         self.z = None
         self.w = None
+        self.Rx = None # rx is real!!1!1!
+        self.Ry = None
+        self.Rz = None
 
     def GetValues(self):
         with open(self.path, 'rb') as file:
             # Read the first 16 bytes (4 floats, 4 bytes each, big-endian)
             raw_data = file.read(64)
             
-            if len(raw_data) < 16:
+            if len(raw_data) < 64:
                 raise ValueError("File does not contain enough data for a Pivot.")
+            
+            self.Rx, self.Ry, self.Rz = EulerHexTools.HexMatrixEuler(raw_data[:48])
 
             # Unpack the 4 floats from the last 16 bytes (big-endian)
             self.x, self.y, self.z, self.w = struct.unpack('<4f', raw_data[-16:])
             
-        return self.x, self.y, self.z, self.w
+        return self.x, self.y, self.z, self.w, self.Rx, self.Ry, self.Rz
     
-    def UpdateValues(self, x=None, y=None, z=None, w=None):
+    def UpdateValues(self, x=None, y=None, z=None, w=None, Rx=None, Ry=None, Rz=None):
         # Set new values if provided
         if x is not None:
             self.x = x
@@ -193,14 +199,21 @@ class Pivot:
             self.z = z
         if w is not None:
             self.w = w
+        if Rx is not None:
+            self.Rx = Rx
+        if Ry is not None:
+            self.Ry = Ry
+        if Rz is not None:
+            self.Rz = Rz
 
         # Pack the updated values as big-endian floats
-        updated_data = struct.pack('<4f', self.x, self.y, self.z, self.w)
+        updated_position = struct.pack('<4f', self.x, self.y, self.z, self.w)
+        updated_rotation = EulerHexTools.EulerHexMatrix(self.Rx, self.Ry, self.Rz)
         
         with open(self.path, 'r+b') as file:
-            # Move to the last 16 bytes and write the updated data
-            file.seek(-16, 2)
-            file.write(updated_data)
+            
+            file.write(updated_rotation)
+            file.write(updated_position)
             return True
         return False
 

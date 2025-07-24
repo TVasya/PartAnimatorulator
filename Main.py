@@ -54,24 +54,31 @@ def UpdateStates(event=None):
                 item.configure(state="normal")
                 item.delete(0, customtkinter.END)
             pivot = Pivot(selected_item)
-            XEntry.insert(0, pivot.GetValues()[0])
-            YEntry.insert(0, pivot.GetValues()[1])
-            ZEntry.insert(0, pivot.GetValues()[2])
-            WEntry.insert(0, pivot.GetValues()[3])
+            xpos, ypos, zpos, wsize, xrot, yrot, zrot = pivot.GetValues()
+            XEntry.insert(0, xpos)
+            YEntry.insert(0, ypos)
+            ZEntry.insert(0, zpos)
+            WEntry.insert(0, wsize)
+            XRotEntry.insert(0, xrot)
+            YRotEntry.insert(0, yrot)
+            ZRotEntry.insert(0, zrot)
+
         elif Hierarchy.parent(parent) == 'AnimSlots':
             for item in EntryList:
                 item.configure(state="normal")
                 item.delete(0, customtkinter.END)
-            WEntry.configure(state="disabled")
+            for item in PosEntryList:
+                item.configure(state="disabled")
+                item.delete(0, customtkinter.END)
             with open('TEMP\Frames.json', 'r') as FramesJson:
                 FramesInfo = json.load(FramesJson)
             frame = FramesInfo[parent][0][f"FRAME{(int(selected_items[0][21:])):02d}"]
             x = frame["x"]
             y = frame["y"]
             z = frame["z"]
-            XEntry.insert(0, x)
-            YEntry.insert(0, y)
-            ZEntry.insert(0, z)
+            XRotEntry.insert(0, x)
+            YRotEntry.insert(0, y)
+            ZRotEntry.insert(0, z)
         else:
             for item in EntryList:
                 item.delete(0, customtkinter.END)
@@ -88,15 +95,15 @@ def UpdateCoords(a):
     parent = Hierarchy.parent(selected_item)
     if parent == 'PivotData':
         pivot = Pivot(selected_item)
-        pivot.UpdateValues(float(XEntry.get()), float(YEntry.get()), float(ZEntry.get()), float(WEntry.get()))
+        pivot.UpdateValues(float(XEntry.get()), float(YEntry.get()), float(ZEntry.get()), float(WEntry.get()), float(XRotEntry.get()), float(YRotEntry.get()), float(ZRotEntry.get()))
     elif Hierarchy.parent(parent) == 'AnimSlots':
         with open('TEMP\Frames.json', 'r') as FramesJson:
             FramesInfo = json.load(FramesJson)
         frame = FramesInfo[parent][0][f"FRAME{(int(selected_items[0][21:])):02d}"]
         frame.update({
-            "x": float(XEntry.get()),
-            "y": float(YEntry.get()),
-            "z": float(ZEntry.get())
+            "x": float(XRotEntry.get()),
+            "y": float(YRotEntry.get()),
+            "z": float(ZRotEntry.get())
         })
         with open('TEMP\Frames.json', 'w') as FramesJson:
             json.dump(FramesInfo, FramesJson, indent=4)
@@ -263,7 +270,7 @@ def Exit():
 
 
 app = CTk()  
-app.title("PartAnimatorulator 1.0.0 | January 10, 2025") 
+app.title("PartAnimatorulator 1.1.0 | July 23, 2025") 
 current_directory = os.path.dirname(os.path.abspath(__file__))
 app.iconbitmap(os.path.join(current_directory, "icon.ico"))
 app.protocol("WM_DELETE_WINDOW", Exit)
@@ -407,25 +414,44 @@ scrollbar.config(command=Hierarchy.yview)
 PropertiesFrame = CTkFrame(master=MainFrame)
 PropertiesFrame.grid(padx=0, pady=5, row=0, column=1, sticky='nsew')
 
-XLabel = CTkLabel(PropertiesFrame, text = 'X Coordinates')
+XLabel = CTkLabel(PropertiesFrame, text = 'X Position')
 XLabel.grid(row=0, column=0, sticky="w", padx=10, pady=1)
 separator = ttk.Separator(PropertiesFrame)
 separator.grid(row=1, column=0, sticky="ew", pady=1)
 
-YLabel = CTkLabel(PropertiesFrame, text = 'Y Coordinates')
+YLabel = CTkLabel(PropertiesFrame, text = 'Y Position')
 YLabel.grid(row=2, column=0, sticky="w", padx=10, pady=1)
 separator1 = ttk.Separator(PropertiesFrame)
 separator1.grid(row=3, column=0, sticky="ew", pady=1)
 
-ZLabel = CTkLabel(PropertiesFrame, text = 'Z Coordinates')
+ZLabel = CTkLabel(PropertiesFrame, text = 'Z Position')
 ZLabel.grid(row=4, column=0, sticky="w", padx=10, pady=1)
 separator2 = ttk.Separator(PropertiesFrame)
 separator2.grid(row=5, column=0, sticky="ew", pady=1)
 
-WLabel = CTkLabel(PropertiesFrame, text = 'W - Size')
+WLabel = CTkLabel(PropertiesFrame, text = 'W - Position Size')
 WLabel.grid(row=6, column=0, sticky="w", padx=10, pady=1)
 separator3 = ttk.Separator(PropertiesFrame)
 separator3.grid(row=7, column=0, sticky="ew", pady=1)
+separator4 = ttk.Separator(PropertiesFrame)
+separator4.grid(row=9, column=0, sticky="ew", pady=1)
+
+
+XRotLabel = CTkLabel(PropertiesFrame, text = 'X Rotation')
+XRotLabel.grid(row=10, column=0, sticky="w", padx=10, pady=1)
+Rotseparator = ttk.Separator(PropertiesFrame)
+Rotseparator.grid(row=11, column=0, sticky="ew", pady=1)
+
+YRotLabel = CTkLabel(PropertiesFrame, text = 'Y Rotation')
+YRotLabel.grid(row=12, column=0, sticky="w", padx=10, pady=1)
+Rotseparator1 = ttk.Separator(PropertiesFrame)
+Rotseparator1.grid(row=13, column=0, sticky="ew", pady=1)
+
+ZRotLabel = CTkLabel(PropertiesFrame, text = 'Z Rotation')
+ZRotLabel.grid(row=14, column=0, sticky="w", padx=10, pady=1)
+Rotseparator2 = ttk.Separator(PropertiesFrame)
+Rotseparator2.grid(row=15, column=0, sticky="ew", pady=1)
+
 
 
 
@@ -456,8 +482,26 @@ WEntry = CTkEntry(ValuesFrame, width=50, state="disabled")
 WEntry.grid(row=6, column=0, sticky="nsew", pady=1)
 separator7 = ttk.Separator(ValuesFrame)
 separator7.grid(row=7, column=0, sticky="ew", pady=1)
+separator8 = ttk.Separator(ValuesFrame)
+separator8.grid(row=8, column=0, sticky="ew", pady=1)
 
-EntryList = [XEntry,YEntry,ZEntry,WEntry]
+XRotEntry = CTkEntry(ValuesFrame, width=50, state="disabled")
+XRotEntry.grid(row=9, column=0, sticky="nsew", pady=1)
+Rotseparator4 = ttk.Separator(ValuesFrame)
+Rotseparator4.grid(row=10, column=0, sticky="ew", pady=1)
+
+YRotEntry = CTkEntry(ValuesFrame, width=50, state="disabled")
+YRotEntry.grid(row=11, column=0, sticky="nsew", pady=1)
+Rotseparator5 = ttk.Separator(ValuesFrame)
+Rotseparator5.grid(row=12, column=0, sticky="ew", pady=1)
+
+ZRotEntry = CTkEntry(ValuesFrame, width=50, state="disabled")
+ZRotEntry.grid(row=13, column=0, sticky="nsew", pady=1)
+Rotseparator6 = ttk.Separator(ValuesFrame)
+Rotseparator6.grid(row=14, column=0, sticky="ew", pady=1)
+
+EntryList = [XEntry,YEntry,ZEntry,WEntry,XRotEntry,YRotEntry,ZRotEntry]
+PosEntryList = [XEntry,YEntry,ZEntry,WEntry]
 
 for item in EntryList:
     item.bind("<KeyRelease>", UpdateCoords)
