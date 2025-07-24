@@ -7,7 +7,7 @@ PartAnimatorulator is a tool for editing Need for Speed Underground 2's PARTS_AN
 3. Change car xname (with automatic hashing).
 4. Edit animation frames (with interpolation for easier usage).
 
-PLEASE NOTE: Since black box decided for some unknown reason to make split hoods (left and right) have rotated pivot, and then compensate that rotation in the animation, please remember set the pivot's rotation to 0 if you are going to make your own one for the split hoods.
+PLEASE NOTE: Since black box decided for some unknown reason to make split hoods (left and right) have rotated pivot, and then compensate that rotation in the animation, please remember to set pivot's rotation to 0 if you are going to make your own animation for the split hoods.
 
 BLENDER ADDON DOCUMENTATION: https://docs.google.com/document/d/1us-0Py6jYLBRM4JHH2kCq9uHrFL05VH5-Re3d8MLHis/edit?usp=sharing
 
